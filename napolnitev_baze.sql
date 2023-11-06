@@ -36,11 +36,13 @@ create procedure NAPOLNI_DRZAVO(in rc int)
 begin
     DECLARE i int;
     SET i = 0;
+    START TRANSACTION;
     WHILE i < rc
         DO
             INSERT INTO drzava(naziv) VALUES (concat('drzava-', i));
             SET i = i + 1;
         END WHILE;
+    COMMIT;
 END //
 
 DELIMITER ;
@@ -51,11 +53,13 @@ CREATE PROCEDURE NAPOLNI_SMER(in rc int)
 BEGIN
     DECLARE i int;
     SET i = 0;
+    START TRANSACTION;
     WHILE i < rc
         DO
-            INSERT INTO smer(naziv) VALUES (concat('smer-', i));
+            INSERT INTO smer(naziv, opis) VALUES (concat('smer-', i), concat('zelo dolg opis smera ', i));
             SET i = i + 1;
         END WHILE;
+    COMMIT;
 
 END //
 
@@ -73,6 +77,7 @@ BEGIN
     DECLARE CONTINUE HANDLER FOR SQLSTATE '23000'
         SET d = 1;
 
+    START TRANSACTION;
     OPEN d_cur;
     FETCH d_cur INTO d_id, d_naziv;
 
@@ -87,7 +92,7 @@ BEGIN
         END IF;
     END LOOP;
     CLOSE d_cur;
-
+    COMMIT;
 END;
 //
 DELIMITER ;
@@ -107,6 +112,7 @@ BEGIN
     DECLARE CONTINUE HANDLER FOR SQLSTATE '23000'
         SET d = 1;
 
+    START TRANSACTION;
     OPEN k_cur;
     FETCH k_cur INTO kraj_id, kraj_naziv, kraj_drzava_id;
 
@@ -121,6 +127,7 @@ BEGIN
         END IF;
     END LOOP;
     CLOSE k_cur;
+    COMMIT;
 END;
 //
 
@@ -141,6 +148,7 @@ BEGIN
     DECLARE CONTINUE HANDLER FOR SQLSTATE '23000'
         SET d = 1;
 
+    START TRANSACTION ;
     OPEN naslov_cur;
     FETCH naslov_cur INTO naslov_id, naslov_naziv, naslov_kraj_id;
 
@@ -158,6 +166,7 @@ BEGIN
         END IF;
     END LOOP;
     CLOSE naslov_cur;
+    COMMIT;
 
 END;
 //
@@ -176,6 +185,7 @@ BEGIN
         SET d = 1;
     DECLARE CONTINUE HANDLER FOR SQLSTATE '23000'
         SET d = 1;
+    START TRANSACTION ;
     OPEN smer_cur;
     FETCH smer_cur INTO smer_id, smer_naziv;
 
@@ -194,29 +204,41 @@ BEGIN
         END IF;
     END LOOP;
     CLOSE smer_cur;
+    COMMIT;
 
 END;
 //
 
+
 DELIMITER //
 CREATE PROCEDURE NAPOLNI_STUDENT(in rc_n int)
 BEGIN
+
+
     DECLARE studentIndex INT default 1;
+
 
     DECLARE d INT default 0;
 
-
     DECLARE cur_naslov_id INT;
-
+    DECLARE smer_count INT;
 
     DECLARE naslov_cur CURSOR FOR SELECT naslovId FROM naslov ORDER BY rand() limit rc_n;
+    DECLARE smer_count_cur CURSOR FOR SELECT COUNT(smerId) FROM smer;
+
 
     DECLARE CONTINUE HANDLER FOR SQLSTATE '02000'
         SET d = 1;
     DECLARE CONTINUE HANDLER FOR SQLSTATE '23000'
         SET d = 1;
+
+    START TRANSACTION;
     OPEN naslov_cur;
     FETCH naslov_cur INTO cur_naslov_id;
+
+    OPEN smer_count_cur;
+    FETCH smer_count_cur INTO smer_count;
+    CLOSE smer_count_cur;
     loop_lbl:
     LOOP
         IF d = 1 THEN
@@ -224,15 +246,16 @@ BEGIN
         END IF;
         IF NOT d = 1 THEN
             INSERT INTO student(vpisna_stevilka, ime, priimek, predizobrazba, Smer_id, Naslov_id)
-            VALUES ((SELECT LEFT(UUID(), 8)), concat('Ime ', studentIndex),
-                    concat('Priimek ', studentIndex),
-                    'Predizobrazba', FLOOR(RAND() * ((SELECT COUNT(smerId) FROM smer) - 1) + 1), cur_naslov_id);
+            VALUES ('123', studentIndex,
+                    studentIndex,
+                    'Predizobrazba', FLOOR(RAND() * (100000 - 1) + 1),
+                    cur_naslov_id);
             SET studentIndex = studentIndex + 1;
             FETCH naslov_cur INTO cur_naslov_id;
         END IF;
     END LOOP;
     CLOSE naslov_cur;
-
+    COMMIT;
 END
 //
 
@@ -253,6 +276,7 @@ BEGIN
     DECLARE CONTINUE HANDLER FOR SQLSTATE '23000'
         SET d = 1;
 
+    START TRANSACTION ;
     OPEN predmet_cur;
     FETCH predmet_cur INTO predmet_id, predmet_naziv;
     loop_lbl:
@@ -267,6 +291,7 @@ BEGIN
 
     END LOOP;
     close predmet_cur;
+    COMMIT;
 
 END //
 
@@ -286,6 +311,7 @@ BEGIN
         SET d = 1;
     DECLARE CONTINUE HANDLER FOR SQLSTATE '23000'
         SET d = 1;
+    START TRANSACTION ;
     OPEN predmet_cur;
     FETCH predmet_cur INTO cur_predmet_id;
 
@@ -304,6 +330,7 @@ BEGIN
         END IF;
     END LOOP;
     CLOSE predmet_cur;
+    COMMIT;
 END
 //
 
@@ -322,6 +349,7 @@ BEGIN
         SET d = 1;
     DECLARE CONTINUE HANDLER FOR SQLSTATE '23000'
         SET d = 1;
+    START TRANSACTION ;
     OPEN predmet_cur;
     FETCH predmet_cur INTO cur_predmet_id;
 
@@ -340,6 +368,7 @@ BEGIN
         END IF;
     END LOOP;
     CLOSE predmet_cur;
+    COMMIT;
 END
 //
 
@@ -358,6 +387,7 @@ BEGIN
         SET d = 1;
     DECLARE CONTINUE HANDLER FOR SQLSTATE '23000'
         SET d = 1;
+    START TRANSACTION ;
     OPEN vaje_cur;
     FETCH vaje_cur INTO vaje_id;
 
@@ -377,6 +407,7 @@ BEGIN
         END IF;
     END LOOP;
     CLOSE vaje_cur;
+    COMMIT;
 END //
 
 DELIMITER //
@@ -393,6 +424,7 @@ BEGIN
         SET d = 1;
     DECLARE CONTINUE HANDLER FOR SQLSTATE '23000'
         SET d = 1;
+    START TRANSACTION ;
     OPEN vaje_cur;
     FETCH vaje_cur INTO vaje_id;
 
@@ -411,18 +443,34 @@ BEGIN
         END IF;
     END LOOP;
     CLOSE vaje_cur;
+    COMMIT;
 END
 //
 
-# call NAPOLNI_DRZAVO(1000);
-# call NAPOLNI_SMER(1000);
-# CALL NAPOLNI_KRAJ(1000);
-# call NAPOLNI_NASLOV(1000);
-# call NAPOLNI_DELAVEC(1000);
-# call NAPOLNI_PREDMET(1000);
-# call NAPOLNI_STUDENT(1000);
-# call NAPOLNI_VAJE(1000);
-# call NAPOLNI_STUDENT_PREDMET(1000);
-# call NAPOLNI_PREDMET_DELAVEC(1000);
-# call NAPOLNI_PRISOTNOST(1000);
-# call NAPOLNI_OCENE(1000);
+# call NAPOLNI_DRZAVO(100000);
+# call NAPOLNI_SMER(100000);
+# CALL NAPOLNI_KRAJ(100000);
+# call NAPOLNI_NASLOV(100000);
+# call NAPOLNI_DELAVEC(100000);
+# call NAPOLNI_PREDMET(100000);
+# call NAPOLNI_STUDENT(100000);
+# call NAPOLNI_VAJE(100000);
+# call NAPOLNI_STUDENT_PREDMET(100000);
+# call NAPOLNI_PREDMET_DELAVEC(100000);
+# call NAPOLNI_PRISOTNOST(100000);
+# call NAPOLNI_OCENE(100000);
+
+
+# SET foreign_key_checks = 0;
+# TRUNCATE TABLE drzava;
+# TRUNCATE TABLE kraj;
+# TRUNCATE TABLE naslov;
+# TRUNCATE TABLE student;
+#
+# SET foreign_key_checks = 1;
+#
+# CALL NAPOLNI_DRZAVO(100000);
+# CALL NAPOLNI_KRAJ(100000);
+# CALL NAPOLNI_NASLOV(100000);
+#
+# CALL NAPOLNI_STUDENT(100000);
