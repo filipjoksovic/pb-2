@@ -180,7 +180,7 @@ BEGIN
     DECLARE smer_id INT;
     DECLARE smer_naziv varchar(45);
 
-    DECLARE smer_cur CURSOR FOR SELECT * FROM smer order by rand() limit rc;
+    DECLARE smer_cur CURSOR FOR SELECT smerId, smer_naziv FROM smer order by rand() limit rc;
     DECLARE CONTINUE HANDLER FOR SQLSTATE '02000'
         SET d = 1;
     DECLARE CONTINUE HANDLER FOR SQLSTATE '23000'
